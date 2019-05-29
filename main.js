@@ -1,11 +1,17 @@
 const SHA256 = require('crypto-js/sha256');
 //const moment = require('moment');
 
+class Transaction {
+    constructor (fromAddress, toAddress, amount) {
+        this.fromAddress = fromAddress;
+        this.toAddress = toAddress;
+        this.amount = amount;
+    }
+}
 class Block {
-    constructor (index, timestamp, data, previousHash = '') {
-        this.index = index;
+    constructor (timestamp, transaction, previousHash = '') {
         this.timestamp = timestamp;
-        this.data = data;
+        this.transaction = transaction;
         this.previousHash = previousHash;
         this.hash = this.calculateHash();
         this.nonce = 0; 
@@ -17,7 +23,7 @@ class Block {
     }
 
     calculateHash() {
-        return SHA256(this.index + this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce).toString();
+        return SHA256(this.previousHash + this.timestamp + JSON.stringify(this.data) + this.nonce).toString();
     }
 
     mineBlock(difficulty) { //here difficulty is the number of 0's a hash should begin with.
@@ -35,20 +41,51 @@ class BlockChain {
     constructor () {
         this.chain = [this.createGenesisBlock()];
         this.difficulty = 4;
+        this.pendingTransactions = [];
+        this.miningReward = 420;
     }
 
     createGenesisBlock() {
-        return new Block(0, "29/05/2019", "Genesis Block", "0");
+        return new Block("29/05/2019", [], "0");
     }
 
     getLatestBlock () {
         return this.chain[this.chain.length - 1];
     }
 
-    addBlock(newBlock) {
-        newBlock.previousHash = this.getLatestBlock().hash
-        newBlock.mineBlock(this.difficulty);
-        this.chain.push(newBlock);
+    minePendingTransactions(miningRewardAddress) {
+        const rewardTx = new Transaction(null, miningRewardAddress, this.miningReward);
+        this.pendingTransactions.push(rewardTx);
+
+        let block = new Block(Date.now(), this.pendingTransactions, this.getLatestBlock().hash);
+        block.mineBlock(this.difficulty);
+
+        console.log('Block successfully mined!');
+        this.chain.push(block);
+
+        this.pendingTransactions = [];
+    }
+
+    createTransaction(transaction) {
+        this.pendingTransactions.push(transaction);
+    }
+
+    getBalanceOfAddress(address) {
+        let balance = 0;
+        
+        for (const block of this.chain) {
+            for (const trans of block.transaction) {
+                if (trans.fromAddress === address) {
+                    balance -= trans.amount;
+                }
+
+                if (trans.toAddress === address) {
+                    balance += trans.amount;
+                }
+            }
+        }
+
+        return balance;
     }
 
     isChainValid() {
@@ -70,11 +107,18 @@ class BlockChain {
 
 var BITSCoin = new BlockChain();
 
-console.log("Mining block 1...");
-BITSCoin.addBlock(new Block (1, "29/05/2019", { amount: 4 }));
+BITSCoin.createTransaction(new Transaction('address 1', 'address 2', 100));
+BITSCoin.createTransaction(new Transaction('address 2', 'address 1', 50));
 
-console.log("Mining block 2...");
-BITSCoin.addBlock(new Block(2, "29/05/2019", { amount: 3 }));
+console.log('Starting the miner...');
+BITSCoin.minePendingTransactions('xd123');
 
-// console.log(JSON.stringify(BITSCoin, null, 4));
-// console.log(`Is BITSCoin Valid? ${BITSCoin.isChainValid()}`);
+console.log('Balance = ', BITSCoin.getBalanceOfAddress('xd123')); //Balance here will still be zero since the mining reward is added to the pending transactions
+                                                                  //and will only show up in the block chain when the next block is mined.  
+console.log('Starting the miner again...');
+BITSCoin.minePendingTransactions('xd123');
+
+console.log('Balance = ', BITSCoin.getBalanceOfAddress('xd123'));
+
+console.log(JSON.stringify(BITSCoin, null, 4));
+console.log(`Is BITSCoin Valid? ${BITSCoin.isChainValid()}`);
