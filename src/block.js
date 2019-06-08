@@ -1,7 +1,5 @@
 const SHA256 = require('crypto-js/sha256');
 
-//const {Transaction} = require('./blockchain.js');
-
 class Block {
     constructor(timestamp, transactions, previousHash = '') {
         this.timestamp = timestamp;
