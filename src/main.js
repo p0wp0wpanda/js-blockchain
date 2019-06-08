@@ -9,7 +9,7 @@ const myWalletAddress = myKey.getPublic('hex');
 
 let BITSCoin = new BlockChain();
 
-const tx1 = new Transaction(myWalletAddress, 'public key goes here', 100);
+const tx1 = new Transaction(myWalletAddress, 'public key goes here', 420);
 tx1.signTransaction(myKey);
 BITSCoin.addTransaction(tx1);
 

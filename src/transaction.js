@@ -22,7 +22,7 @@ class Transaction {
         const sig = signingKey.sign(hashTx, 'base64');
         this.signature = sig.toDER('hex');
 
-        console.log(`hashTx : ${hashTx}`);
+        //console.log(`hashTx : ${hashTx}`);
     }
 
     isValid() {

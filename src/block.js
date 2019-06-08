@@ -9,7 +9,7 @@ class Block {
         this.nonce = 0;
         //nonce is a completely random number that helps in changing the hash of a
         //block so that it can satisfy a particular condition set by the chain
-        //eg: Should start with a certain number of 0's in BitCoin's case
+        //eg: The hash should start with a certain number of 0's in BitCoin's case
         //without nonce the hash of a block depends only on index, timestamp,
         //data etc which are constant and hence the hash will always be the same.
     }
