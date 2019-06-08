@@ -1,3 +1,6 @@
+const SHA256 = require('crypto-js/sha256');
+const EC = require('elliptic').ec;
+const ec = EC('secp256k1');
 //const moment = require('moment');
 
 const {Block} = require('./block.js');
@@ -7,6 +10,35 @@ class Transaction {
         this.fromAddress = fromAddress;
         this.toAddress = toAddress;
         this.amount = amount;
+    }
+
+    calculateTransactionHash() {
+        return SHA256(this.fromAddress + this.toAddress + this.amount).toString();
+    }
+
+    signTransaction(signingKey) {
+        if (signingKey.getPublic('hex') !== this.fromAddress) {
+            throw new Error("You cannot sign transactions for other wallets");
+        }
+
+        const hashTx = this.calculateTransactionHash()
+        const sig = signingKey.sign(hashTx, 'base64');
+        this.signature = sig.toDER('hex');
+
+        console.log(`hashTx : ${hashTx}`);
+    }
+    
+    isValid() {
+        if(this.fromAddress === null) {
+            return true;
+        }
+
+        if (!this.signature || this.signature.length === 0) {
+                throw new Error("No signature found for this transaction");
+        }
+
+        const publicKey = ec.keyFromPublic(this.fromAddress, 'hex');
+        return publicKey.verify(this.calculateTransactionHash(), this.signature);
     }
 }
 
@@ -39,7 +71,15 @@ class BlockChain {
         this.pendingTransactions = [];
     }
 
-    createTransaction(transaction) {
+    addTransaction(transaction) {
+        if (!transaction.fromAddress || !transaction.toAddress) {
+            throw new Error("Transaction must include to and from address");
+        }
+
+        if (!transaction.isValid()) {
+            throw new Error("Cannot add invalid transaction");
+        }
+
         this.pendingTransactions.push(transaction);
     }
 
@@ -47,7 +87,7 @@ class BlockChain {
         let balance = 0;
 
         for (const block of this.chain) {
-            for (const trans of block.transaction) {
+            for (const trans of block.transactions) {
                 if (trans.fromAddress === address) {
                     balance -= trans.amount;
                 }
@@ -67,6 +107,10 @@ class BlockChain {
             const previousBlock = this.chain[i - 1];
 
             if (currentBlock.hash !== currentBlock.calculateHash()) {
+                return false;
+            }
+
+            if (!currentBlock.hasValidTransactions()) {
                 return false;
             }
 

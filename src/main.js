@@ -1,21 +1,26 @@
+const EC = require('elliptic').ec;
+const ec = EC('secp256k1');
+
 const {BlockChain, Transaction} = require('./blockchain');
 
-const BITSCoin = new BlockChain();
+const myKey = ec.keyFromPrivate('f37e25401911b731613765790efbee359a43d8a5018c8ef9903d3c1845d26358');
+const myWalletAddress = myKey.getPublic('hex');
 
-BITSCoin.createTransaction(new Transaction('address 1', 'address 2', 100));
-BITSCoin.createTransaction(new Transaction('address 2', 'address 1', 50));
+let BITSCoin = new BlockChain();
 
-const user = "xd123"
+const tx1 = new Transaction(myWalletAddress, 'public key goes here', 100);
+tx1.signTransaction(myKey);
+BITSCoin.addTransaction(tx1);
 
 console.log('Starting the miner...');
-BITSCoin.minePendingTransactions(user);
+BITSCoin.minePendingTransactions(myWalletAddress);
 
-console.log(`${user}'s Balance = `, BITSCoin.getBalanceOfAddress(user));
+console.log(`My wallet's Balance = `, BITSCoin.getBalanceOfAddress(myWalletAddress));
 
-console.log('Starting the miner again...');
-BITSCoin.minePendingTransactions(user);
+// console.log('Starting the miner again...');
+// BITSCoin.minePendingTransactions(user);
 
-console.log(`${user}'s Balance = `, BITSCoin.getBalanceOfAddress(user));
+// console.log(`${user}'s Balance = `, BITSCoin.getBalanceOfAddress(user));
 
-//console.log(JSON.stringify(BITSCoin, null, 4));
+console.log(JSON.stringify(BITSCoin, null, 4));
 console.log(`Is BITSCoin Valid? ${BITSCoin.isChainValid()}`);
